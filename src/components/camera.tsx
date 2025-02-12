@@ -7,9 +7,20 @@ export default function CameraCapture() {
   const [isUploading, setIsUploading] = useState(false);
   const [text, setText] = useState("");
 
+  const speak = (text: string) => {
+    if (!text) return;
+    const speech = new SpeechSynthesisUtterance(text);
+    speech.lang = "en-US"; // Change to your preferred language
+    speech.rate = 1; // Speed of speech (0.5 - 2)
+    speech.pitch = 1; // Pitch (0 - 2)
+    speechSynthesis.speak(speech);
+  };
+
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+      });
       if (videoRef.current) videoRef.current.srcObject = stream;
     } catch (error) {
       console.error("Error accessing camera:", error);
@@ -22,6 +33,7 @@ export default function CameraCapture() {
       stream.getTracks().forEach((track) => track.stop());
     }
   };
+
   useEffect(() => {
     startCamera();
 
@@ -60,6 +72,7 @@ export default function CameraCapture() {
 
       if (data.text) {
         setText(data.text);
+        speak(data.text);
       }
     } catch (error) {
       console.error("Error uploading image:", error);
@@ -69,25 +82,27 @@ export default function CameraCapture() {
   };
 
   return (
-    <div className="flex flex-col items-center w-[80%]">
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        className="w-100 aspect-video border bg-gray-100"
-      />
-      <canvas ref={canvasRef} width={640} height={480} className="hidden" />
+    <div className="flex flex-col items-center w-full h-full relative">
+      <div className="relative w-full h-full flex justify-center items-center">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          className="h-fit border bg-gray-100"
+        />
+        <canvas ref={canvasRef} width={640} height={480} className="hidden" />
 
-      <div className="flex space-x-4 mt-2 mb-8">
-        <button
-          onClick={uploadImage}
-          disabled={isUploading}
-          className="bg-purple-500 text-white px-4 py-2 rounded"
-        >
-          {isUploading ? "Uploading..." : "Upload Image"}
-        </button>
+        <div className="absolute bottom-[5%]">
+          <button
+            onClick={uploadImage}
+            disabled={isUploading}
+            className="bg-red-500/80 text-4xl font-bold text-white px-8 py-6 rounded-xl"
+          >
+            {isUploading ? "Uploading..." : "Upload Image"}
+          </button>
+        </div>
       </div>
-      {text && <p className="text-xl w-[80%] text-center">{text}</p>}
+      <div className="mt-4 w-full flex justify-center">{text && <p className="text-xl w-[80%] text-center">{text}</p>}</div>
     </div>
   );
 }
