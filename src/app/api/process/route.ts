@@ -23,11 +23,11 @@ export async function POST(req: Request) {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API);
     const model = genAI.getGenerativeModel({
       model: "gemini-1.5-pro",
-      systemInstruction: "You can only answer with 30 words or less",
+      systemInstruction: "Jawab menggunakan bahasa Indonesia. Kamu hanya dapat menjawab dalam 30 kata atau kurang.",
     });
-    const prompt = "Explain the image";
+    // const prompt = "Jelaskan gambar secara singkat.";
 
-    const { image } = await req.json();
+    const { image, prompt } = await req.json();
     if (!image.startsWith("data:image")) {
       return NextResponse.json(
         { error: "Invalid image format" },

@@ -6,11 +6,82 @@ export default function CameraCapture() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [text, setText] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const holdTimerRef = useRef<number | null>(null);
+  const holdDuration = 500; // Duration in milliseconds to consider it a "hold"
+
+  // Initialize speech recognition
+  const initializeRecognition = () => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.error("Speech Recognition is not supported in this browser.");
+      return;
+    }
+    let recordedText = "";
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "id-ID"; // Set language
+    recognition.interimResults = false; // Only final results
+    recognition.continuous = true; // Stop after one sentence
+
+    recognition.onstart = () => {
+      recordedText = "";
+    }
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        recordedText += transcript + "\n";
+      }
+    };
+    
+    recognition.onend = () => {
+      console.log(recordedText);
+      uploadImage(recordedText);
+      handleHoldEnd();
+    };
+
+    recognitionRef.current = recognition;
+  };
+
+  // Start recording (for hold)
+  const startRecording = () => {
+    if (!recognitionRef.current) {
+      initializeRecognition();
+    }
+    recognitionRef.current?.start();
+    setIsRecording(true);
+  };
+
+  // Stop recording (for hold)
+  const stopRecording = () => {
+    recognitionRef.current?.stop();
+    setIsRecording(false);
+  };
+
+  // Handle mouse down/touch start (start hold timer)
+  const handleHoldStart = () => {
+    holdTimerRef.current = window.setTimeout(() => {
+      startRecording(); // Trigger hold function
+    }, holdDuration);
+  };
+
+  // Handle mouse up/touch end (clear hold timer)
+  const handleHoldEnd = () => {
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+    if (isRecording) {
+      stopRecording(); // Stop recording if it was a hold
+    }
+  };
 
   const speak = (text: string) => {
     if (!text) return;
     const speech = new SpeechSynthesisUtterance(text);
-    speech.lang = "en-US"; // Change to your preferred language
+    speech.lang = "id-ID"; // Change to your preferred language
     speech.rate = 1; // Speed of speech (0.5 - 2)
     speech.pitch = 1; // Pitch (0 - 2)
     speechSynthesis.speak(speech);
@@ -54,7 +125,7 @@ export default function CameraCapture() {
     return null;
   };
 
-  const uploadImage = async () => {
+  const uploadImage = async (recordedText: string = "") => {
     const imageSrc = captureImage();
 
     if (!imageSrc) return;
@@ -64,7 +135,10 @@ export default function CameraCapture() {
       const response = await fetch("/api/process/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: imageSrc }), // Send Base64 image
+        body: JSON.stringify({
+          image: imageSrc,
+          prompt: recordedText ?? "Jelaskan gambar secara singkat.",
+        }), // Send Base64 image
       });
 
       const data = await response.json();
@@ -92,17 +166,31 @@ export default function CameraCapture() {
         />
         <canvas ref={canvasRef} width={640} height={480} className="hidden" />
 
-        <div className="absolute bottom-[5%]">
+        <div
+          className={`absolute bottom-[5%] ${
+            isRecording ? "scale-75" : ""
+          } transition-all`}
+        >
           <button
-            onClick={uploadImage}
+            onClick={() => uploadImage()}
             disabled={isUploading}
+            onMouseDown={handleHoldStart} // Start hold timer on mouse down
+            onMouseUp={handleHoldEnd} // Clear hold timer on mouse up
+            onTouchStart={handleHoldStart} // Start hold timer on touch start
+            onTouchEnd={handleHoldEnd} // Clear hold timer on touch end
             className="bg-red-500/80 text-4xl font-bold text-white px-8 py-6 rounded-xl"
           >
-            {isUploading ? "Uploading..." : "Upload Image"}
+            {isRecording
+              ? "Recording..."
+              : isUploading
+              ? "Uploading..."
+              : "Press"}
           </button>
         </div>
       </div>
-      <div className="mt-4 w-full flex justify-center">{text && <p className="text-xl w-[80%] text-center">{text}</p>}</div>
+      <div className="mt-4 w-full flex justify-center">
+        {text && <p className="text-xl w-[80%] text-center">{text}</p>}
+      </div>
     </div>
   );
 }
