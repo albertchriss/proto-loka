@@ -164,7 +164,7 @@ export default function CameraCapture() {
           playsInline
           className="h-[100vh] w-[100vw] object-cover border bg-gray-100"
         />
-        <canvas ref={canvasRef} className="hidden "/>
+        <canvas ref={canvasRef} className="hidden h-[100vh] w-[100vw] object-cover"/>
 
         <div
           className={`absolute bottom-[5%] w-[50vw] ${
