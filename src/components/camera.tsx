@@ -1,11 +1,12 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { IoCameraOutline } from "react-icons/io5";
+import { ScaleLoader, SyncLoader } from "react-spinners";
 
 export default function CameraCapture() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [text, setText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const holdTimerRef = useRef<number | null>(null);
@@ -145,7 +146,6 @@ export default function CameraCapture() {
       console.log("Server Response:", data);
 
       if (data.text) {
-        setText(data.text);
         speak(data.text);
       }
     } catch (error) {
@@ -162,13 +162,13 @@ export default function CameraCapture() {
           ref={videoRef}
           autoPlay
           playsInline
-          className="h-fit border bg-gray-100"
+          className="h-[100vh] w-[100vw] object-cover border bg-gray-100"
         />
-        <canvas ref={canvasRef} width={640} height={480} className="hidden" />
+        <canvas ref={canvasRef} className="hidden "/>
 
         <div
-          className={`absolute bottom-[5%] ${
-            isRecording ? "scale-75" : ""
+          className={`absolute bottom-[5%] w-[50%]${
+            isRecording ? "scale-90" : ""
           } transition-all`}
         >
           <button
@@ -178,18 +178,15 @@ export default function CameraCapture() {
             onMouseUp={handleHoldEnd} // Clear hold timer on mouse up
             onTouchStart={handleHoldStart} // Start hold timer on touch start
             onTouchEnd={handleHoldEnd} // Clear hold timer on touch end
-            className="bg-red-500/80 text-4xl font-bold text-white px-8 py-6 rounded-xl"
+            className="bg-red-500/80 text-4xl font-bold text-white px-8 py-6 h-20 w-full rounded-xl flex items-center justify-center"
           >
             {isRecording
-              ? "Recording..."
+              ? <ScaleLoader color="white" />
               : isUploading
-              ? "Uploading..."
-              : "Press"}
+              ? <SyncLoader color="white"/>
+              : <IoCameraOutline size={50}/>}
           </button>
         </div>
-      </div>
-      <div className="mt-4 w-full flex justify-center">
-        {text && <p className="text-xl w-[80%] text-center">{text}</p>}
       </div>
     </div>
   );
