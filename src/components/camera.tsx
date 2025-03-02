@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { IoCameraOutline } from "react-icons/io5";
 import { ScaleLoader, SyncLoader } from "react-spinners";
@@ -11,6 +12,7 @@ export default function CameraCapture() {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const holdTimerRef = useRef<number | null>(null);
   const holdDuration = 500; // Duration in milliseconds to consider it a "hold"
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
 
   // Initialize speech recognition
   const initializeRecognition = () => {
@@ -29,14 +31,14 @@ export default function CameraCapture() {
 
     recognition.onstart = () => {
       recordedText = "";
-    }
+    };
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         recordedText += transcript + "\n";
       }
     };
-    
+
     recognition.onend = () => {
       console.log(recordedText);
       uploadImage(recordedText);
@@ -117,9 +119,14 @@ export default function CameraCapture() {
   const captureImage = () => {
     if (videoRef.current && canvasRef.current) {
       const ctx = canvasRef.current.getContext("2d");
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
       if (ctx) {
-        ctx.drawImage(videoRef.current, 0, 0, 640, 480);
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const base64Image = canvasRef.current.toDataURL("image/png");
+        setCapturedImage(base64Image); // Set the captured image to state
         return base64Image;
       }
     }
@@ -164,7 +171,10 @@ export default function CameraCapture() {
           playsInline
           className="h-[100vh] w-[100vw] object-cover border bg-gray-100"
         />
-        <canvas ref={canvasRef} className="hidden h-[100vh] w-[100vw] object-cover"/>
+        <canvas
+          ref={canvasRef}
+          className="hidden h-[100vh] w-[100vw] object-cover"
+        />
 
         <div
           className={`absolute bottom-[5%] w-[50vw] ${
@@ -180,14 +190,25 @@ export default function CameraCapture() {
             onTouchEnd={handleHoldEnd} // Clear hold timer on touch end
             className="bg-red-500/80 text-4xl font-bold text-white px-8 py-6 h-20 w-full rounded-xl flex items-center justify-center"
           >
-            {isRecording
-              ? <ScaleLoader color="white" />
-              : isUploading
-              ? <SyncLoader color="white"/>
-              : <IoCameraOutline size={50}/>}
+            {isRecording ? (
+              <ScaleLoader color="white" />
+            ) : isUploading ? (
+              <SyncLoader color="white" />
+            ) : (
+              <IoCameraOutline size={50} />
+            )}
           </button>
         </div>
       </div>
+      {capturedImage && (
+        <Image
+        width={128}
+        height={128}
+          src={capturedImage}
+          alt="Captured"
+          className="absolute top-4 left-4 w-32 h-32 border-2 border-white rounded-lg"
+        />
+      )}
     </div>
   );
 }
