@@ -112,7 +112,7 @@ export default function CameraCapture() {
     return () => {
       stopCamera();
     };
-  });
+  }, []);
 
   const captureImage = () => {
     if (videoRef.current && canvasRef.current) {
@@ -167,7 +167,7 @@ export default function CameraCapture() {
         <canvas ref={canvasRef} className="hidden "/>
 
         <div
-          className={`absolute bottom-[5%] w-[50%]${
+          className={`absolute bottom-[5%] w-[50vw] ${
             isRecording ? "scale-90" : ""
           } transition-all`}
         >
