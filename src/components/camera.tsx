@@ -13,6 +13,7 @@ export default function CameraCapture() {
   const holdTimerRef = useRef<number | null>(null);
   const holdDuration = 500; // Duration in milliseconds to consider it a "hold"
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [text, setText] = useState<string | null>(null);
 
   // Initialize speech recognition
   const initializeRecognition = () => {
@@ -36,13 +37,14 @@ export default function CameraCapture() {
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         recordedText += transcript + "\n";
+        setText(recordedText);
       }
     };
 
     recognition.onend = () => {
       console.log(recordedText);
-      uploadImage(recordedText);
       handleHoldEnd();
+      uploadImage(recordedText);
     };
 
     recognitionRef.current = recognition;
@@ -85,15 +87,28 @@ export default function CameraCapture() {
     if (!text) return;
     const speech = new SpeechSynthesisUtterance(text);
     speech.lang = "id-ID"; // Change to your preferred language
-    speech.rate = 1; // Speed of speech (0.5 - 2)
+    speech.rate = 1.2; // Speed of speech (0.5 - 2)
     speech.pitch = 1; // Pitch (0 - 2)
     speechSynthesis.speak(speech);
   };
 
   const startCamera = async () => {
     try {
+      // List available devices
+      // const devices = await navigator.mediaDevices.enumerateDevices();
+      // console.log("Available devices:", devices);
+
+      // Filter for video input devices
+      // const videoDevices = devices.filter(
+      //   (device) => device.kind === "videoinput"
+      // );
+      // console.log("Video devices:", videoDevices);
+      // setText(videoDevices.map(device => device.label).join(", "));
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
+        video: {
+          facingMode: "environment",
+          // deviceId: videoDevices[videoDevices.length - 1].deviceId,
+        },
       });
       if (videoRef.current) videoRef.current.srcObject = stream;
     } catch (error) {
@@ -154,6 +169,7 @@ export default function CameraCapture() {
 
       if (data.text) {
         speak(data.text);
+        setText(data.text);
       }
     } catch (error) {
       console.error("Error uploading image:", error);
@@ -199,11 +215,16 @@ export default function CameraCapture() {
             )}
           </button>
         </div>
+        {text && (
+          <p className="w-[80vw] text-center text-white bg-black absolute bottom-[20vh] px-2 py-3 bg-opacity-50 ">
+            {text}
+          </p>
+        )}
       </div>
       {capturedImage && (
         <Image
-        width={128}
-        height={128}
+          width={128}
+          height={128}
           src={capturedImage}
           alt="Captured"
           className="absolute top-4 left-4 w-32 h-32 border-2 border-white rounded-lg"

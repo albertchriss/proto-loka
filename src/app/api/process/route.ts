@@ -22,8 +22,9 @@ export async function POST(req: Request) {
     }
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API);
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-pro",
-      systemInstruction: "Jawab menggunakan bahasa Indonesia. Kamu hanya dapat menjawab dalam 30 kata atau kurang.",
+      model: "gemini-2.0-flash",
+      systemInstruction:
+        "Jawab menggunakan bahasa Indonesia. Kamu hanya dapat menjawab dalam 10 kata atau kurang.",
     });
     // const prompt = "Jelaskan gambar secara singkat.";
 
@@ -37,7 +38,9 @@ export async function POST(req: Request) {
     const base64 = image.replace(/^data:image\/\w+;base64,/, "");
     const imageParts = [fileToGenerativePart(base64, `image/png`)];
     const result = await model.generateContent([prompt, ...imageParts]);
-
+    // const countResult = await model.countTokens([prompt, ...imageParts]);
+    // console.log("total token: ", countResult.totalTokens);
+    // console.log("usage: ",result.response.usageMetadata);
     return NextResponse.json({
       text: `${result.response.text()}`,
     });
