@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     const model = genAI.getGenerativeModel({
       model: "gemini-2.0-flash",
       systemInstruction:
-        "Jawab menggunakan bahasa Indonesia. Kamu hanya dapat menjawab dalam 10 kata atau kurang.",
+        "Nama kamu adalah Loka. Jawab menggunakan bahasa Indonesia. Kamu hanya dapat menjawab dalam 10 kata atau kurang.",
     });
     // const prompt = "Jelaskan gambar secara singkat.";
 
